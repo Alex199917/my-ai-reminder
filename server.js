@@ -8,7 +8,6 @@ import pg from "pg";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const { Pool } = pg;
 
 const { Pool } = pg;
 
