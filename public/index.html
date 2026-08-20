@@ -13,7 +13,8 @@
     .hero h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;opacity:.82}.card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 5px 24px #00174b10}
     label{display:block;font-size:13px;font-weight:700;margin:0 0 7px}.row{display:grid;grid-template-columns:1fr 150px;gap:12px}
     input{width:100%;padding:13px 14px;border:1px solid #d7dce5;border-radius:12px;font-size:15px}button{border:0;border-radius:12px;padding:13px 16px;font-weight:800;cursor:pointer}
-    .primary{background:var(--pink);color:var(--navy);margin-top:14px}.notify{background:var(--navy);color:#fff;width:100%;margin-top:10px}
+#reminderMessage{font-size:16px;padding:16px;
+  margin-bottom:12px;    .primary{background:var(--pink);color:var(--navy);margin-top:14px}.notify{background:var(--navy);color:#fff;width:100%;margin-top:10px}
     .rem{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0;border-bottom:1px solid #edf0f4}.rem:last-child{border:0}
     .time{font-weight:900;color:var(--navy);font-size:20px}.small{color:var(--muted);font-size:13px}.delete{background:#f1f3f6;color:#596273;padding:8px 11px}
     .days{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.day{background:#eef1f6;padding:7px 10px;border-radius:9px;font-size:12px}.day.on{background:#ffd4e6;color:var(--navy);font-weight:800}
@@ -28,16 +29,26 @@
   </section>
 
   <div class="card">
-    <h2 style="margin-top:0">Add a reminder</h2>
-    <div class="row">
-      <div><label for="text">What should I remind you about?</label><input id="text" placeholder="Check my emails"></div>
-      <div><label for="time">Time</label><input id="time" type="time" value="08:00"></div>
-    </div>
-    <div class="days" id="days"></div>
-    <button class="primary" onclick="addReminder()">+ Add Reminder</button>
-    <button class="notify" onclick="enableNotifications()">🔔 Enable notifications</button>
-    <div id="status">Notifications are needed for reminders to reach you when the app isn't open.</div>
+  <h2 style="margin-top:0">What do you need reminding about?</h2>
+
+  <input
+    id="reminderMessage"
+    placeholder="e.g. Remind me every weekday at 8am to check my emails"
+    autocomplete="off"
+  >
+
+  <button class="primary" onclick="createAIReminder()">
+    ✨ Add Reminder
+  </button>
+
+  <button class="notify" onclick="enableNotifications()">
+    🔔 Enable notifications
+  </button>
+
+  <div id="status">
+    You can type your reminder naturally — I'll figure out the time and days.
   </div>
+</div>
 
   <div class="card">
     <h2 style="margin-top:0">Your reminders</h2>
