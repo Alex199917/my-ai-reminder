@@ -1,0 +1,9 @@
+{
+  "name":"My AI Reminder",
+  "short_name":"Reminder",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#f5f7fb",
+  "theme_color":"#00174B",
+  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml"}]
+}
