@@ -29,6 +29,25 @@ if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
 
 const DB_FILE = path.join(__dirname, "data.json");
 let db = { subscriptions: [], reminders: [] };
+async function setupDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reminders (
+      id TEXT PRIMARY KEY,
+      text TEXT NOT NULL,
+      time TEXT NOT NULL,
+      days INTEGER[] NOT NULL,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE
+    );
+
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      endpoint TEXT UNIQUE NOT NULL,
+      subscription JSONB NOT NULL
+    );
+  `);
+
+  console.log("PostgreSQL database ready");
+}
 
 if (fs.existsSync(DB_FILE)) {
   try { db = JSON.parse(fs.readFileSync(DB_FILE, "utf8")); } catch {}
