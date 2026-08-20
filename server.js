@@ -62,82 +62,150 @@ if (fs.existsSync(DB_FILE)) {
 function save() {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
-app.post("/api/parse-reminder", async (req, res) => {
+app.post("/api/parse-reminder", (req, res) => {
   try {
-    const { message } = req.body;
+    const message = String(req.body.message || "").trim();
 
-    if (!message?.trim()) {
+    if (!message) {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    const response = await openai.responses.create({
-      model: "gpt-5.6-luna",
-      input: [
-        {
-          role: "system",
-          content: `
-You are a reminder assistant.
+    const lower = message.toLowerCase();
 
-Convert the user's message into a reminder.
+    // -------------------------
+    // DAYS
+    // -------------------------
+    let days = [0, 1, 2, 3, 4, 5, 6];
 
-Today's date is ${new Date().toISOString().slice(0, 10)}.
-The user's timezone is Africa/Johannesburg.
+    if (lower.includes("weekday")) {
+      days = [1, 2, 3, 4, 5];
+    } else if (lower.includes("weekend")) {
+      days = [0, 6];
+    } else {
+      const dayMap = {
+        sunday: 0,
+        monday: 1,
+        tuesday: 2,
+        wednesday: 3,
+        thursday: 4,
+        friday: 5,
+        saturday: 6
+      };
 
-Return:
-- text: the reminder text
-- time: the reminder time in 24-hour HH:MM format
-- days: an array using 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-- enabled: always true
+      const foundDays = Object.entries(dayMap)
+        .filter(([name]) => lower.includes(name))
+        .map(([, number]) => number);
 
-If the user says:
-- every day → all 7 days
-- every weekday → Monday to Friday
-- every weekend → Saturday and Sunday
-- a specific day → that day only
-
-For one-time reminders, use the appropriate day of the week.
-
-If the user does not provide enough information to determine a time, set time to null.
-`
-        },
-        {
-          role: "user",
-          content: message.trim()
-        }
-      ],
-      text: {
-        format: {
-          type: "json_schema",
-          name: "reminder",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              text: { type: "string" },
-              time: {
-                type: ["string", "null"]
-              },
-              days: {
-                type: "array",
-                items: { type: "integer" }
-              },
-              enabled: { type: "boolean" }
-            },
-            required: ["text", "time", "days", "enabled"],
-            additionalProperties: false
-          }
-        }
+      if (foundDays.length) {
+        days = foundDays;
       }
+    }
+
+    // -------------------------
+    // TIME
+    // -------------------------
+    let time = null;
+
+    const timeMatch = lower.match(
+      /\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/
+    );
+
+    if (timeMatch) {
+      let hour = Number(timeMatch[1]);
+      const minute = Number(timeMatch[2] || "00");
+      const period = timeMatch[3];
+
+      if (period === "pm" && hour < 12) hour += 12;
+      if (period === "am" && hour === 12) hour = 0;
+
+      if (!period && hour <= 6) {
+        hour += 12;
+      }
+
+      if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+        time =
+          String(hour).padStart(2, "0") +
+          ":" +
+          String(minute).padStart(2, "0");
+      }
+    }
+
+    // Natural-language times
+    if (!time && lower.includes("morning")) {
+      time = "08:00";
+    }
+
+    if (!time && lower.includes("afternoon")) {
+      time = "15:00";
+    }
+
+    if (!time && lower.includes("evening")) {
+      time = "18:00";
+    }
+
+    if (!time && lower.includes("night")) {
+      time = "20:00";
+    }
+
+    if (!time) {
+      return res.status(400).json({
+        error: "I couldn't find a time. Try something like 'at 8am'."
+      });
+    }
+
+    // -------------------------
+    // REMINDER TEXT
+    // -------------------------
+    let text = message;
+
+    text = text.replace(
+      /^remind me\s+(?:every\s+)?/i,
+      ""
+    );
+
+    text = text.replace(
+      /\b(?:weekday|weekdays|weekend|weekends|every day|daily)\b/gi,
+      ""
+    );
+
+    text = text.replace(
+      /\b(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi,
+      ""
+    );
+
+    text = text.replace(
+      /\b(?:at\s*)?\d{1,2}(?::\d{2})?\s*(?:am|pm)?\b/gi,
+      ""
+    );
+
+    text = text.replace(
+      /\b(?:morning|afternoon|evening|night)\b/gi,
+      ""
+    );
+
+    text = text.replace(/^\s*(?:to|about)\s+/i, "");
+    text = text.replace(/\s+/g, " ").trim();
+
+    if (!text) {
+      return res.status(400).json({
+        error: "Tell me what you want to be reminded about."
+      });
+    }
+
+    res.json({
+      text,
+      time,
+      days
     });
 
-    const reminder = JSON.parse(response.output_text);
-
-    res.json(reminder);
   } catch (error) {
-    console.error("AI reminder parsing error:", error);
-    res.status(500).json({ error: "Could not understand the reminder" });
+    console.error("Free reminder parser error:", error);
+    res.status(500).json({
+      error: "Could not understand that reminder."
+    });
   }
 });
+
 app.get("/api/config", (_, res) => {
   res.json({ vapidPublicKey: VAPID_PUBLIC_KEY });
 });
