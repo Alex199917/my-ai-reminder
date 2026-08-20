@@ -2,59 +2,495 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <meta name="theme-color" content="#00174B">
+  <meta name="description" content="Your personal AI reminder assistant">
+
   <link rel="manifest" href="/manifest.json">
-  <title>My AI Reminder</title>
+
+  <title>My Reminder</title>
+
   <style>
-    :root{--navy:#00174B;--pink:#FF88BD;--bg:#f5f7fb;--muted:#687385}
-    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:#101828}
-    .wrap{max-width:760px;margin:auto;padding:28px 18px 60px}.hero{background:var(--navy);color:#fff;border-radius:24px;padding:28px;margin-bottom:18px}
-    .hero h1{margin:0 0 8px;font-size:30px}.hero p{margin:0;opacity:.82}.card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 5px 24px #00174b10}
-    label{display:block;font-size:13px;font-weight:700;margin:0 0 7px}.row{display:grid;grid-template-columns:1fr 150px;gap:12px}
-    input{width:100%;padding:13px 14px;border:1px solid #d7dce5;border-radius:12px;font-size:15px}button{border:0;border-radius:12px;padding:13px 16px;font-weight:800;cursor:pointer}
-#reminderMessage{font-size:16px;padding:16px;
-  margin-bottom:12px;    .primary{background:var(--pink);color:var(--navy);margin-top:14px}.notify{background:var(--navy);color:#fff;width:100%;margin-top:10px}
-    .rem{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0;border-bottom:1px solid #edf0f4}.rem:last-child{border:0}
-    .time{font-weight:900;color:var(--navy);font-size:20px}.small{color:var(--muted);font-size:13px}.delete{background:#f1f3f6;color:#596273;padding:8px 11px}
-    .days{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.day{background:#eef1f6;padding:7px 10px;border-radius:9px;font-size:12px}.day.on{background:#ffd4e6;color:var(--navy);font-weight:800}
-    #status{margin-top:10px;font-size:13px;color:var(--muted)}
+    :root {
+      --navy: #00174B;
+      --pink: #FF88BD;
+      --pink-light: #fff0f7;
+      --background: #f5f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #718096;
+      --border: #e8ecf3;
+      --shadow: 0 12px 35px rgba(0, 23, 75, 0.08);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(
+          circle at top right,
+          rgba(255, 136, 189, 0.14),
+          transparent 32%
+        ),
+        var(--background);
+      color: var(--text);
+      font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    /* -------------------------
+       HEADER
+    ------------------------- */
+
+    .topbar {
+      background: var(--navy);
+      color: white;
+      padding: 22px 20px 75px;
+    }
+
+    .topbar-inner {
+      width: min(900px, 100%);
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+    }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      background: var(--pink);
+      display: grid;
+      place-items: center;
+      font-size: 23px;
+      box-shadow: 0 8px 20px rgba(255, 136, 189, 0.25);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 750;
+      letter-spacing: -0.3px;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    /* -------------------------
+       MAIN
+    ------------------------- */
+
+    main {
+      width: min(900px, calc(100% - 32px));
+      margin: -48px auto 50px;
+      position: relative;
+    }
+
+    .hero {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 30px;
+      margin-bottom: 22px;
+    }
+
+    .hero h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 27px;
+      letter-spacing: -0.7px;
+    }
+
+    .hero-text {
+      color: var(--muted);
+      margin: 8px 0 24px;
+      font-size: 15px;
+    }
+
+    /* -------------------------
+       REMINDER INPUT
+    ------------------------- */
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 17px;
+      top: 17px;
+      font-size: 20px;
+      pointer-events: none;
+    }
+
+    #reminderMessage {
+      width: 100%;
+      min-height: 64px;
+      resize: vertical;
+      padding: 18px 18px 18px 50px;
+      border: 2px solid var(--border);
+      border-radius: 17px;
+      background: #fbfcfe;
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+      transition: 0.2s ease;
+    }
+
+    #reminderMessage:focus {
+      border-color: var(--pink);
+      background: white;
+      box-shadow: 0 0 0 4px rgba(255, 136, 189, 0.12);
+    }
+
+    #reminderMessage::placeholder {
+      color: #9aa5b5;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 13px;
+    }
+
+    .primary {
+      flex: 1;
+      border: 0;
+      border-radius: 15px;
+      padding: 15px 20px;
+      background: var(--pink);
+      color: var(--navy);
+      font-weight: 750;
+      box-shadow: 0 8px 20px rgba(255, 136, 189, 0.24);
+      transition: 0.2s ease;
+    }
+
+    .primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 11px 25px rgba(255, 136, 189, 0.32);
+    }
+
+    .primary:active {
+      transform: translateY(0);
+    }
+
+    .notify {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 15px 18px;
+      background: white;
+      color: var(--navy);
+      font-weight: 650;
+    }
+
+    .notify:hover {
+      border-color: var(--pink);
+      background: var(--pink-light);
+    }
+
+    #status {
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* -------------------------
+       REMINDERS SECTION
+    ------------------------- */
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 30px 5px 13px;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 18px;
+    }
+
+    .section-heading span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    #reminders {
+      display: grid;
+      gap: 12px;
+    }
+
+    .reminder {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 5px 18px rgba(0, 23, 75, 0.045);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .reminder-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .reminder-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--pink-light);
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+
+    .reminder-text {
+      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .reminder-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .delete-btn {
+      border: 0;
+      background: transparent;
+      color: #a0a9b8;
+      font-size: 13px;
+      padding: 8px;
+      border-radius: 10px;
+    }
+
+    .delete-btn:hover {
+      color: #d64570;
+      background: #fff1f5;
+    }
+
+    /* -------------------------
+       EMPTY STATE
+    ------------------------- */
+
+    .empty {
+      background: white;
+      border: 1px dashed #d9dfeb;
+      border-radius: 20px;
+      padding: 35px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 34px;
+      margin-bottom: 10px;
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--navy);
+      margin-bottom: 5px;
+    }
+
+    /* -------------------------
+       FOOTER
+    ------------------------- */
+
+    footer {
+      text-align: center;
+      color: #9aa5b5;
+      font-size: 12px;
+      padding: 15px 0 30px;
+    }
+
+    /* -------------------------
+       MOBILE
+    ------------------------- */
+
+    @media (max-width: 650px) {
+
+      .topbar {
+        padding-bottom: 65px;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+      }
+
+      .brand p {
+        display: none;
+      }
+
+      main {
+        width: min(100% - 20px, 900px);
+        margin-top: -42px;
+      }
+
+      .hero {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .hero h2 {
+        font-size: 23px;
+      }
+
+      .button-row {
+        flex-direction: column;
+      }
+
+      .primary,
+      .notify {
+        width: 100%;
+      }
+
+      .reminder {
+        align-items: flex-start;
+      }
+
+      .delete-btn {
+        margin-top: 5px;
+      }
+    }
   </style>
 </head>
+
 <body>
-<div class="wrap">
-  <section class="hero">
-    <h1>🔔 My Reminder</h1>
-    <p>Your simple personal reminder assistant.</p>
-  </section>
 
-  <div class="card">
-  <h2 style="margin-top:0">What do you need reminding about?</h2>
+  <!-- HEADER -->
 
-  <input
-    id="reminderMessage"
-    placeholder="e.g. Remind me every weekday at 8am to check my emails"
-    autocomplete="off"
-  >
+  <header class="topbar">
+    <div class="topbar-inner">
 
-  <button class="primary" onclick="createAIReminder()">
-    ✨ Add Reminder
-  </button>
+      <div class="brand">
 
-  <button class="notify" onclick="enableNotifications()">
-    🔔 Enable notifications
-  </button>
+        <div class="brand-icon">
+          🔔
+        </div>
 
-  <div id="status">
-    You can type your reminder naturally — I'll figure out the time and days.
-  </div>
-</div>
+        <div>
+          <h1>My Reminder</h1>
+          <p>Your personal reminder assistant</p>
+        </div>
 
-  <div class="card">
-    <h2 style="margin-top:0">Your reminders</h2>
-    <div id="list"></div>
-  </div>
-</div>
-<script src="/app.js"></script>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- MAIN -->
+
+  <main>
+
+    <!-- AI REMINDER CARD -->
+
+    <section class="hero">
+
+      <h2>What can I remind you about?</h2>
+
+      <p class="hero-text">
+        Just tell me naturally. I'll work out the time and days for you.
+      </p>
+
+      <div class="input-wrap">
+
+        <div class="input-icon">
+          💬
+        </div>
+
+        <input
+          id="reminderMessage"
+          type="text"
+          placeholder="Remind me every weekday at 8am to check my emails"
+          autocomplete="off"
+        >
+
+      </div>
+
+      <div class="button-row">
+
+        <button
+          class="primary"
+          onclick="createAIReminder()"
+        >
+          ✨ Add Reminder
+        </button>
+
+        <button
+          class="notify"
+          onclick="enableNotifications()"
+        >
+          🔔 Notifications
+        </button>
+
+      </div>
+
+      <div id="status">
+        Notifications are needed for reminders to reach you when the app isn't open.
+      </div>
+
+    </section>
+
+
+    <!-- REMINDERS -->
+
+    <div class="section-heading">
+
+      <h2>Your reminders</h2>
+
+      <span>Upcoming</span>
+
+    </div>
+
+    <div id="reminders"></div>
+
+
+    <!-- FOOTER -->
+
+    <footer>
+      My Reminder · Personal reminder assistant
+    </footer>
+
+  </main>
+
 </body>
 </html>
