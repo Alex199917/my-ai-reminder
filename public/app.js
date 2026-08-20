@@ -44,6 +44,59 @@ async function enableNotifications(){
   const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(cfg.vapidPublicKey)});
   await fetch("/api/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});
   setStatus("✅ Notifications enabled. You're all set!");
+}async function createAIReminder(){
+  const input = document.getElementById("reminderMessage");
+  const message = input.value.trim();
+
+  if (!message) {
+    return setStatus("Tell me what you'd like to be reminded about.");
+  }
+
+  setStatus("🤖 Understanding your reminder...");
+
+  try {
+    const response = await fetch("/api/parse-reminder", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message })
+    });
+
+    const reminder = await response.json();
+
+    if (!response.ok) {
+      throw new Error(reminder.error || "Could not understand reminder");
+    }
+
+    if (!reminder.time) {
+      return setStatus("⏰ What time should I remind you?");
+    }
+
+    const saved = await fetch("/api/reminders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: reminder.text,
+        time: reminder.time,
+        days: reminder.days
+      })
+    });
+
+    if (!saved.ok) {
+      throw new Error("Could not save reminder");
+    }
+
+    input.value = "";
+    setStatus("✅ Reminder added!");
+    await load();
+
+  } catch (error) {
+    console.error(error);
+    setStatus("❌ I couldn't understand that reminder.");
+  }
 }
 function setStatus(t){document.getElementById("status").textContent=t;}
 function urlBase64ToUint8Array(base64String){
