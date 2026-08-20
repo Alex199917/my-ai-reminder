@@ -62,7 +62,82 @@ if (fs.existsSync(DB_FILE)) {
 function save() {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
 }
+app.post("/api/parse-reminder", async (req, res) => {
+  try {
+    const { message } = req.body;
 
+    if (!message?.trim()) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const response = await openai.responses.create({
+      model: "gpt-5.6-luna",
+      input: [
+        {
+          role: "system",
+          content: `
+You are a reminder assistant.
+
+Convert the user's message into a reminder.
+
+Today's date is ${new Date().toISOString().slice(0, 10)}.
+The user's timezone is Africa/Johannesburg.
+
+Return:
+- text: the reminder text
+- time: the reminder time in 24-hour HH:MM format
+- days: an array using 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+- enabled: always true
+
+If the user says:
+- every day → all 7 days
+- every weekday → Monday to Friday
+- every weekend → Saturday and Sunday
+- a specific day → that day only
+
+For one-time reminders, use the appropriate day of the week.
+
+If the user does not provide enough information to determine a time, set time to null.
+`
+        },
+        {
+          role: "user",
+          content: message.trim()
+        }
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "reminder",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              text: { type: "string" },
+              time: {
+                type: ["string", "null"]
+              },
+              days: {
+                type: "array",
+                items: { type: "integer" }
+              },
+              enabled: { type: "boolean" }
+            },
+            required: ["text", "time", "days", "enabled"],
+            additionalProperties: false
+          }
+        }
+      }
+    });
+
+    const reminder = JSON.parse(response.output_text);
+
+    res.json(reminder);
+  } catch (error) {
+    console.error("AI reminder parsing error:", error);
+    res.status(500).json({ error: "Could not understand the reminder" });
+  }
+});
 app.get("/api/config", (_, res) => {
   res.json({ vapidPublicKey: VAPID_PUBLIC_KEY });
 });
