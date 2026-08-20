@@ -76,11 +76,19 @@ app.delete("/api/reminders/:id", (req, res) => {
 async function sendDueReminders() {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !db.subscriptions.length) return;
 
-  const now = new Date();
-  const day = now.getDay();
-  const hhmm = now.toLocaleTimeString("en-ZA", {
-    hour: "2-digit", minute: "2-digit", hour12: false
-  });
+const now = new Date();
+const timeZone = "Africa/Johannesburg";
+const dayName = new Intl.DateTimeFormat("en-US", {
+  timeZone,
+  weekday: "short"
+}).format(now);
+const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(dayName);
+const hhmm = now.toLocaleTimeString("en-ZA", {
+  timeZone,
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false
+});
 
   for (const r of db.reminders.filter(x => x.enabled && x.days.includes(day) && x.time === hhmm)) {
     const payload = JSON.stringify({
