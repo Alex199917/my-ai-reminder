@@ -141,6 +141,15 @@ const hhmm = now.toLocaleTimeString("en-ZA", {
 
 // Check every 30 seconds. For reliable all-day operation, deploy this server
 // on a host that stays running.
-setInterval(sendDueReminders, 30_000);
+setupDatabase()
+  .then(() => {
+    setInterval(sendDueReminders, 30_000);
 
-app.listen(PORT, () => console.log(`Reminder app running on port ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`Reminder app running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Database setup failed:", err);
+    process.exit(1);
+  });
